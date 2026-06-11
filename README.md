@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # KUPKOP
 
 KUPKOP is a Flutter mobile app for family care workflows. The current build includes the onboarding screen, sign-in screen, and forgot-password screen using a playful Duolingo-inspired visual style.
@@ -72,3 +73,7 @@ designs md/   Design notes and references
 ## Notes
 
 Generated Flutter build output is ignored by git. Do not commit `build/`, `.dart_tool/`, or local IDE/cache files.
+=======
+# KupKop
+An app for the one that care but don't have the time
+>>>>>>> 121e3895b5e39c3f35b82f7bec27d01a3f27465b
