@@ -25,6 +25,33 @@ void main() {
     expect(find.text('Forgot Password'), findsOneWidget);
   });
 
+  testWidgets('opens the sign up screen from the welcome screen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const KupkopApp());
+
+    await tester.tap(find.text('GET STARTED'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create Your Account'), findsOneWidget);
+    expect(find.text('Phone Number'), findsOneWidget);
+    expect(find.text('Sign Up'), findsOneWidget);
+    expect(find.text('Sign in With Google'), findsOneWidget);
+    expect(find.text('Sign in With Facebook'), findsOneWidget);
+  });
+
+  testWidgets('opens sign in from the sign up screen', (tester) async {
+    await tester.pumpWidget(const KupkopApp());
+
+    await tester.tap(find.text('GET STARTED'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign In'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Password'), findsOneWidget);
+    expect(find.text('Forgot Password'), findsOneWidget);
+  });
+
   testWidgets('opens the forgot password screen from sign in', (tester) async {
     await tester.pumpWidget(const KupkopApp());
 

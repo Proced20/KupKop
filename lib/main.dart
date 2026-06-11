@@ -226,7 +226,11 @@ class _WelcomeActions extends StatelessWidget {
           backgroundColor: KupkopColors.primary,
           foregroundColor: Colors.white,
           shadowColor: KupkopColors.primaryShadow,
-          onPressed: () {},
+          onPressed: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const SignUpScreen()));
+          },
         ),
         const SizedBox(height: 12),
         _PressableButton(
@@ -440,6 +444,153 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 }
 
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  bool _obscurePassword = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxHeight < 760;
+
+            return _CenteredScrollPage(
+              maxWidth: 430,
+              horizontalPadding: 38,
+              minHeight: constraints.maxHeight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Create Your Account',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.black,
+                      fontFamily: 'Baloo',
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
+                  ),
+                  SizedBox(height: compact ? 52 : 76),
+                  const _InputLabel('Email'),
+                  const SizedBox(height: 8),
+                  const _SignInField(
+                    hintText: 'Enter your email address',
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 16),
+                  const _InputLabel('Phone Number'),
+                  const SizedBox(height: 8),
+                  const _PhoneNumberField(),
+                  const SizedBox(height: 16),
+                  const _InputLabel('Password'),
+                  const SizedBox(height: 8),
+                  _SignInField(
+                    hintText: 'Enter your password',
+                    obscureText: _obscurePassword,
+                    suffixIcon: IconButton(
+                      tooltip: _obscurePassword
+                          ? 'Show password'
+                          : 'Hide password',
+                      onPressed: () {
+                        setState(() => _obscurePassword = !_obscurePassword);
+                      },
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: KupkopColors.inkMuted,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: compact ? 28 : 34),
+                  _PressableButton(
+                    label: 'Sign Up',
+                    backgroundColor: KupkopColors.primary,
+                    foregroundColor: Colors.white,
+                    shadowColor: KupkopColors.primaryShadow,
+                    onPressed: () {},
+                  ),
+                  const SizedBox(height: 20),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 4,
+                    children: [
+                      Text(
+                        'Have an Account?',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.black,
+                          fontFamily: 'Baloo',
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (_) => const SignInScreen(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Sign In',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: KupkopColors.primary,
+                                fontFamily: 'Baloo',
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: compact ? 28 : 36),
+                  const _SocialButton(
+                    label: 'Sign in With Google',
+                    icon: _GoogleMark(),
+                  ),
+                  const SizedBox(height: 14),
+                  const _SocialButton(
+                    label: 'Sign in With Facebook',
+                    icon: Icon(
+                      Icons.facebook_rounded,
+                      color: KupkopColors.facebookBlue,
+                      size: 26,
+                    ),
+                  ),
+                  SizedBox(height: compact ? 34 : 44),
+                  Text(
+                    'By signing in to Sinau, you agree to our Terms\nand Privacy Policy',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: KupkopColors.inkMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class ForgotPasswordScreen extends StatelessWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -632,6 +783,135 @@ class _SignInField extends StatelessWidget {
   }
 }
 
+class _PhoneNumberField extends StatelessWidget {
+  const _PhoneNumberField();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: KupkopColors.fieldFill,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: KupkopColors.borderStrong),
+        boxShadow: const [
+          BoxShadow(color: KupkopColors.inputShadow, offset: Offset(0, 3)),
+        ],
+      ),
+      child: Row(
+        children: [
+          ClipOval(
+            child: Image.asset(
+              'src/images/Philippines.png',
+              width: 22,
+              height: 22,
+              fit: BoxFit.cover,
+              semanticLabel: 'Philippines flag',
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'PH',
+            style: TextStyle(
+              color: KupkopColors.inkMuted,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(width: 4),
+          const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: KupkopColors.inkMuted,
+            size: 22,
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: TextField(
+              keyboardType: TextInputType.phone,
+              cursorColor: KupkopColors.primary,
+              decoration: InputDecoration(
+                hintText: '+63(942-421-4534)',
+                hintStyle: TextStyle(
+                  color: KupkopColors.inkMuted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: TextStyle(
+                color: KupkopColors.ink,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SocialButton extends StatelessWidget {
+  const _SocialButton({required this.label, required this.icon});
+
+  final String label;
+  final Widget icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: KupkopColors.border),
+        boxShadow: const [
+          BoxShadow(color: KupkopColors.socialShadow, offset: Offset(0, 3)),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          icon,
+          const SizedBox(width: 10),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.black,
+              fontFamily: 'Baloo',
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GoogleMark extends StatelessWidget {
+  const _GoogleMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text(
+      'G',
+      style: TextStyle(
+        color: KupkopColors.googleBlue,
+        fontSize: 23,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 0,
+      ),
+    );
+  }
+}
+
 abstract final class KupkopColors {
   static const primary = Color(0xFF58CC02);
   static const primaryShadow = Color(0xFF58A700);
@@ -644,4 +924,8 @@ abstract final class KupkopColors {
   static const fieldFill = Color(0xFFFAFAFA);
   static const border = Color(0xFFE5E5E5);
   static const borderStrong = Color(0xFFCFCFCF);
+  static const inputShadow = Color(0xFFE0E0E0);
+  static const socialShadow = Color(0xFFE9E9E9);
+  static const googleBlue = Color(0xFF4285F4);
+  static const facebookBlue = Color(0xFF1877F2);
 }
