@@ -1,28 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
-  runApp(const KupkopApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  var firebaseReady = false;
+  Object? firebaseError;
+
+  try {
+    await Firebase.initializeApp();
+    firebaseReady = true;
+  } catch (error) {
+    firebaseError = error;
+  }
+
+  runApp(KupkopApp(firebaseReady: firebaseReady, firebaseError: firebaseError));
 }
 
 class KupkopApp extends StatelessWidget {
-  const KupkopApp({super.key});
+  const KupkopApp({super.key, required this.firebaseReady, this.firebaseError});
+
+  final bool firebaseReady;
+  final Object? firebaseError;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'KUPKOP',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: KupkopColors.primary),
-        scaffoldBackgroundColor: KupkopColors.canvas,
-        fontFamily: 'Nunito',
-        textTheme: Theme.of(context).textTheme.apply(
-          bodyColor: KupkopColors.ink,
-          displayColor: KupkopColors.ink,
+    return AuthConfig(
+      firebaseReady: firebaseReady,
+      firebaseError: firebaseError,
+      child: MaterialApp(
+        title: 'KUPKOP',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: KupkopColors.primary),
+          scaffoldBackgroundColor: KupkopColors.canvas,
+          fontFamily: 'Nunito',
+          textTheme: Theme.of(context).textTheme.apply(
+            bodyColor: KupkopColors.ink,
+            displayColor: KupkopColors.ink,
+          ),
         ),
+        home: const WelcomeScreen(),
       ),
-      home: const WelcomeScreen(),
     );
+  }
+}
+
+class AuthConfig extends InheritedWidget {
+  const AuthConfig({
+    super.key,
+    required this.firebaseReady,
+    required this.firebaseError,
+    required super.child,
+  });
+
+  final bool firebaseReady;
+  final Object? firebaseError;
+
+  static AuthConfig of(BuildContext context) {
+    final result = context.dependOnInheritedWidgetOfExactType<AuthConfig>();
+    assert(result != null, 'No AuthConfig found in context');
+    return result!;
+  }
+
+  @override
+  bool updateShouldNotify(AuthConfig oldWidget) {
+    return firebaseReady != oldWidget.firebaseReady ||
+        firebaseError != oldWidget.firebaseError;
   }
 }
 
@@ -351,7 +396,17 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -380,7 +435,8 @@ class _SignInScreenState extends State<SignInScreen> {
                   SizedBox(height: compact ? 28 : 40),
                   const _InputLabel('Email'),
                   const SizedBox(height: 8),
-                  const _SignInField(
+                  _SignInField(
+                    controller: _emailController,
                     hintText: 'Enter your email address',
                     keyboardType: TextInputType.emailAddress,
                   ),
@@ -388,6 +444,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   const _InputLabel('Password'),
                   const SizedBox(height: 8),
                   _SignInField(
+                    controller: _passwordController,
                     hintText: 'Enter your password',
                     obscureText: _obscurePassword,
                     suffixIcon: IconButton(
@@ -408,11 +465,11 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   SizedBox(height: compact ? 28 : 34),
                   _PressableButton(
-                    label: 'Sign In',
+                    label: _isSubmitting ? 'Signing In...' : 'Sign In',
                     backgroundColor: KupkopColors.primary,
                     foregroundColor: Colors.white,
                     shadowColor: KupkopColors.primaryShadow,
-                    onPressed: () {},
+                    onPressed: _isSubmitting ? null : _signIn,
                   ),
                   const SizedBox(height: 18),
                   TextButton(
@@ -442,6 +499,41 @@ class _SignInScreenState extends State<SignInScreen> {
       ),
     );
   }
+
+  Future<void> _signIn() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (!_validateEmailAndPassword(context, email, password)) {
+      return;
+    }
+
+    final authConfig = AuthConfig.of(context);
+    if (!_ensureFirebaseReady(context, authConfig)) {
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const OnboardingChoiceScreen()),
+      );
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+      _showAuthMessage(context, _firebaseAuthMessage(error));
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
 }
 
 class SignUpScreen extends StatefulWidget {
@@ -452,7 +544,19 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -484,18 +588,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   SizedBox(height: compact ? 52 : 76),
                   const _InputLabel('Email'),
                   const SizedBox(height: 8),
-                  const _SignInField(
+                  _SignInField(
+                    controller: _emailController,
                     hintText: 'Enter your email address',
                     keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: 16),
                   const _InputLabel('Phone Number'),
                   const SizedBox(height: 8),
-                  const _PhoneNumberField(),
+                  _PhoneNumberField(controller: _phoneController),
                   const SizedBox(height: 16),
                   const _InputLabel('Password'),
                   const SizedBox(height: 8),
                   _SignInField(
+                    controller: _passwordController,
                     hintText: 'Enter your password',
                     obscureText: _obscurePassword,
                     suffixIcon: IconButton(
@@ -516,11 +622,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   SizedBox(height: compact ? 28 : 34),
                   _PressableButton(
-                    label: 'Sign Up',
+                    label: _isSubmitting ? 'Signing Up...' : 'Sign Up',
                     backgroundColor: KupkopColors.primary,
                     foregroundColor: Colors.white,
                     shadowColor: KupkopColors.primaryShadow,
-                    onPressed: () {},
+                    onPressed: _isSubmitting ? null : _signUp,
                   ),
                   const SizedBox(height: 20),
                   Wrap(
@@ -589,10 +695,59 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
   }
+
+  Future<void> _signUp() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (!_validateEmailAndPassword(context, email, password)) {
+      return;
+    }
+
+    final authConfig = AuthConfig.of(context);
+    if (!_ensureFirebaseReady(context, authConfig)) {
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const OnboardingChoiceScreen()),
+      );
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+      _showAuthMessage(context, _firebaseAuthMessage(error));
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
 }
 
-class ForgotPasswordScreen extends StatelessWidget {
+class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
+
+  @override
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final _emailController = TextEditingController();
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -641,17 +796,18 @@ class ForgotPasswordScreen extends StatelessWidget {
                   const SizedBox(height: 32),
                   const _InputLabel('Email'),
                   const SizedBox(height: 8),
-                  const _SignInField(
+                  _SignInField(
+                    controller: _emailController,
                     hintText: 'Enter your email address',
                     keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: 28),
                   _PressableButton(
-                    label: 'Send Reset Link',
+                    label: _isSubmitting ? 'Sending...' : 'Send Reset Link',
                     backgroundColor: KupkopColors.primary,
                     foregroundColor: Colors.white,
                     shadowColor: KupkopColors.primaryShadow,
-                    onPressed: () {},
+                    onPressed: _isSubmitting ? null : _sendResetLink,
                   ),
                   const SizedBox(height: 18),
                   TextButton(
@@ -672,6 +828,170 @@ class ForgotPasswordScreen extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Future<void> _sendResetLink() async {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty || !email.contains('@')) {
+      _showAuthMessage(context, 'Enter a valid email address.');
+      return;
+    }
+
+    final authConfig = AuthConfig.of(context);
+    if (!_ensureFirebaseReady(context, authConfig)) {
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      if (!mounted) return;
+      _showAuthMessage(context, 'Password reset email sent.');
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+      _showAuthMessage(context, _firebaseAuthMessage(error));
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+}
+
+class OnboardingChoiceScreen extends StatelessWidget {
+  const OnboardingChoiceScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return _CenteredScrollPage(
+              maxWidth: 254,
+              horizontalPadding: 0,
+              minHeight: constraints.maxHeight,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Welcome to KupKop!',
+                    textAlign: TextAlign.left,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.black,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      height: 1.05,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'What do you want to do?',
+                    textAlign: TextAlign.left,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.black,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  const _CareSpaceChoiceCard(),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _CareSpaceChoiceCard extends StatelessWidget {
+  const _CareSpaceChoiceCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.black, width: 1.5),
+        boxShadow: const [
+          BoxShadow(color: KupkopColors.ink, offset: Offset(0, 7)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 111,
+            width: double.infinity,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: KupkopColors.ink, width: 1.2),
+            ),
+            child: Image.asset(
+              'src/images/Onboarding image.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              semanticLabel: 'Family onboarding image',
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 28,
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {},
+              style: FilledButton.styleFrom(
+                backgroundColor: KupkopColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                padding: EdgeInsets.zero,
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+              ),
+              child: const Text('Create Care Space'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 28,
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                backgroundColor: KupkopColors.surfaceLight,
+                foregroundColor: Colors.black,
+                side: const BorderSide(color: KupkopColors.borderStrong),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                padding: EdgeInsets.zero,
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+              ),
+              child: const Text('Join Space'),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }
@@ -735,12 +1055,14 @@ class _InputLabel extends StatelessWidget {
 class _SignInField extends StatelessWidget {
   const _SignInField({
     required this.hintText,
+    this.controller,
     this.keyboardType,
     this.obscureText = false,
     this.suffixIcon,
   });
 
   final String hintText;
+  final TextEditingController? controller;
   final TextInputType? keyboardType;
   final bool obscureText;
   final Widget? suffixIcon;
@@ -748,6 +1070,7 @@ class _SignInField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
       cursorColor: KupkopColors.primary,
@@ -784,7 +1107,9 @@ class _SignInField extends StatelessWidget {
 }
 
 class _PhoneNumberField extends StatelessWidget {
-  const _PhoneNumberField();
+  const _PhoneNumberField({this.controller});
+
+  final TextEditingController? controller;
 
   @override
   Widget build(BuildContext context) {
@@ -826,11 +1151,12 @@ class _PhoneNumberField extends StatelessWidget {
             size: 22,
           ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: TextField(
+              controller: controller,
               keyboardType: TextInputType.phone,
               cursorColor: KupkopColors.primary,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: '+63(942-421-4534)',
                 hintStyle: TextStyle(
                   color: KupkopColors.inkMuted,
@@ -841,7 +1167,7 @@ class _PhoneNumberField extends StatelessWidget {
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
               ),
-              style: TextStyle(
+              style: const TextStyle(
                 color: KupkopColors.ink,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -912,6 +1238,56 @@ class _GoogleMark extends StatelessWidget {
   }
 }
 
+bool _validateEmailAndPassword(
+  BuildContext context,
+  String email,
+  String password,
+) {
+  if (email.isEmpty || !email.contains('@')) {
+    _showAuthMessage(context, 'Enter a valid email address.');
+    return false;
+  }
+
+  if (password.length < 6) {
+    _showAuthMessage(context, 'Password must be at least 6 characters.');
+    return false;
+  }
+
+  return true;
+}
+
+bool _ensureFirebaseReady(BuildContext context, AuthConfig authConfig) {
+  if (authConfig.firebaseReady) {
+    return true;
+  }
+
+  _showAuthMessage(
+    context,
+    'Firebase is not configured yet. Run firebase login and flutterfire configure.',
+  );
+  return false;
+}
+
+void _showAuthMessage(BuildContext context, String message) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message)));
+}
+
+String _firebaseAuthMessage(FirebaseAuthException error) {
+  return switch (error.code) {
+    'email-already-in-use' => 'That email already has an account.',
+    'invalid-email' => 'Enter a valid email address.',
+    'operation-not-allowed' => 'Email/password sign-in is not enabled yet.',
+    'user-disabled' => 'This account has been disabled.',
+    'user-not-found' => 'No account found for that email.',
+    'wrong-password' || 'invalid-credential' => 'Incorrect email or password.',
+    'weak-password' => 'Use a stronger password.',
+    'network-request-failed' => 'Network error. Check your connection.',
+    _ => error.message ?? 'Authentication failed. Please try again.',
+  };
+}
+
 abstract final class KupkopColors {
   static const primary = Color(0xFF58CC02);
   static const primaryShadow = Color(0xFF58A700);
@@ -922,6 +1298,7 @@ abstract final class KupkopColors {
   static const inkMuted = Color(0xFF777777);
   static const canvas = Color(0xFFFFFFFF);
   static const fieldFill = Color(0xFFFAFAFA);
+  static const surfaceLight = Color(0xFFF7F7F7);
   static const border = Color(0xFFE5E5E5);
   static const borderStrong = Color(0xFFCFCFCF);
   static const inputShadow = Color(0xFFE0E0E0);

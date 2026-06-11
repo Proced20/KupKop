@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "449220289665",
+    "project_id": "kupkop-78719",
+    "storage_bucket": "kupkop-78719.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:449220289665:android:3e006661997a1d216fd980",
+        "android_client_info": {
+          "package_name": "com.kupkop.kupkop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4GTs1qjgjkYX_havyN_-iBDIiMteZIr4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
