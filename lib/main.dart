@@ -363,7 +363,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
             return _CenteredScrollPage(
               maxWidth: 430,
-              horizontalPadding: 38,
+              horizontalPadding: 34,
               minHeight: constraints.maxHeight,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -464,7 +464,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
             return _CenteredScrollPage(
               maxWidth: 430,
-              horizontalPadding: 38,
+              horizontalPadding: 34,
               minHeight: constraints.maxHeight,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -602,7 +602,7 @@ class ForgotPasswordScreen extends StatelessWidget {
           builder: (context, constraints) {
             return _CenteredScrollPage(
               maxWidth: 430,
-              horizontalPadding: 38,
+              horizontalPadding: 34,
               minHeight: constraints.maxHeight,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -682,7 +682,7 @@ class _CenteredScrollPage extends StatelessWidget {
     required this.child,
     required this.minHeight,
     this.maxWidth = 430,
-    this.horizontalPadding = 38,
+    this.horizontalPadding = 34,
   });
 
   final Widget child;
