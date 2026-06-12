@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+import 'firebase_options.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -9,7 +11,9 @@ Future<void> main() async {
   Object? firebaseError;
 
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     firebaseReady = true;
   } catch (error) {
     firebaseError = error;
@@ -41,8 +45,32 @@ class KupkopApp extends StatelessWidget {
             displayColor: KupkopColors.ink,
           ),
         ),
-        home: const WelcomeScreen(),
+        home: firebaseReady ? const AuthGate() : const WelcomeScreen(),
       ),
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasData) {
+          return const OnboardingChoiceScreen();
+        }
+
+        return const WelcomeScreen();
+      },
     );
   }
 }
@@ -414,7 +442,7 @@ class _SignInScreenState extends State<SignInScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final compact = constraints.maxHeight < 700;
+            final compact = constraints.maxHeight < 760;
 
             return _CenteredScrollPage(
               maxWidth: 430,
@@ -424,15 +452,27 @@ class _SignInScreenState extends State<SignInScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Text(
+                    'Welcome back!',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: KupkopColors.primary,
+                      fontFamily: 'Baloo',
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
+                  ),
+                  SizedBox(height: compact ? 18 : 26),
                   SizedBox(
-                    height: compact ? 154 : 204,
+                    height: compact ? 140 : 180,
                     child: Image.asset(
                       'src/images/Sign in page Image.png',
                       fit: BoxFit.contain,
                       semanticLabel: 'Family care sign in image',
                     ),
                   ),
-                  SizedBox(height: compact ? 28 : 40),
+                  SizedBox(height: compact ? 22 : 30),
                   const _InputLabel('Email'),
                   const SizedBox(height: 8),
                   _SignInField(
@@ -463,7 +503,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(height: compact ? 28 : 34),
+                  SizedBox(height: compact ? 24 : 30),
                   _PressableButton(
                     label: _isSubmitting ? 'Signing In...' : 'Sign In',
                     backgroundColor: KupkopColors.primary,
@@ -471,7 +511,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     shadowColor: KupkopColors.primaryShadow,
                     onPressed: _isSubmitting ? null : _signIn,
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).push(
@@ -491,6 +531,8 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                     child: const Text('Forgot Password'),
                   ),
+                  SizedBox(height: compact ? 14 : 22),
+                  const _SocialAuthButtons(),
                 ],
               ),
             );
@@ -545,7 +587,6 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isSubmitting = false;
@@ -553,7 +594,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void dispose() {
     _emailController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -585,7 +625,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       height: 1,
                     ),
                   ),
-                  SizedBox(height: compact ? 52 : 76),
+                  SizedBox(height: compact ? 48 : 68),
                   const _InputLabel('Email'),
                   const SizedBox(height: 8),
                   _SignInField(
@@ -593,10 +633,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     hintText: 'Enter your email address',
                     keyboardType: TextInputType.emailAddress,
                   ),
-                  const SizedBox(height: 16),
-                  const _InputLabel('Phone Number'),
-                  const SizedBox(height: 8),
-                  _PhoneNumberField(controller: _phoneController),
                   const SizedBox(height: 16),
                   const _InputLabel('Password'),
                   const SizedBox(height: 8),
@@ -663,30 +699,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ],
                   ),
                   SizedBox(height: compact ? 28 : 36),
-                  const _SocialButton(
-                    label: 'Sign in With Google',
-                    icon: _GoogleMark(),
-                  ),
-                  const SizedBox(height: 14),
-                  const _SocialButton(
-                    label: 'Sign in With Facebook',
-                    icon: Icon(
-                      Icons.facebook_rounded,
-                      color: KupkopColors.facebookBlue,
-                      size: 26,
-                    ),
-                  ),
+                  const _SocialAuthButtons(),
                   SizedBox(height: compact ? 34 : 44),
-                  Text(
-                    'By signing in to Sinau, you agree to our Terms\nand Privacy Policy',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: KupkopColors.inkMuted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      height: 1.35,
-                    ),
-                  ),
+                  const _TermsText(),
                 ],
               ),
             );
@@ -950,7 +965,13 @@ class _CareSpaceChoiceCard extends StatelessWidget {
             height: 28,
             width: double.infinity,
             child: FilledButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const CreateCareSpaceScreen(),
+                  ),
+                );
+              },
               style: FilledButton.styleFrom(
                 backgroundColor: KupkopColors.primary,
                 foregroundColor: Colors.white,
@@ -992,6 +1013,213 @@ class _CareSpaceChoiceCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
         ],
+      ),
+    );
+  }
+}
+
+class CreateCareSpaceScreen extends StatefulWidget {
+  const CreateCareSpaceScreen({super.key});
+
+  @override
+  State<CreateCareSpaceScreen> createState() => _CreateCareSpaceScreenState();
+}
+
+class _CreateCareSpaceScreenState extends State<CreateCareSpaceScreen> {
+  final _spaceNameController = TextEditingController();
+
+  @override
+  void dispose() {
+    _spaceNameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 430),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 34),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 32),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _BackSquareButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      const Spacer(flex: 7),
+                      Text(
+                        'Who are you caring for?',
+                        style: Theme.of(context).textTheme.titleLarge
+                            ?.copyWith(
+                              color: Colors.black,
+                              fontFamily: 'Baloo',
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                      ),
+                      const SizedBox(height: 14),
+                      const _InputLabel('Name your space'),
+                      const SizedBox(height: 18),
+                      _SignInField(
+                        controller: _spaceNameController,
+                        hintText: "Papa's space",
+                      ),
+                      const SizedBox(height: 18),
+                      _PressableButton(
+                        label: 'Create Care Space',
+                        backgroundColor: KupkopColors.primary,
+                        foregroundColor: Colors.white,
+                        shadowColor: KupkopColors.primaryShadow,
+                        onPressed: _createCareSpace,
+                      ),
+                      const Spacer(flex: 9),
+                      TextButton(
+                        onPressed: _signOut,
+                        style: TextButton.styleFrom(
+                          foregroundColor: KupkopColors.inkMuted,
+                          textStyle: const TextStyle(
+                            fontFamily: 'Baloo',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                        child: const Text('Temporary Logout'),
+                      ),
+                      const SizedBox(height: 22),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _createCareSpace() {
+    final spaceName = _spaceNameController.text.trim();
+
+    if (spaceName.isEmpty) {
+      _showAuthMessage(context, 'Name your care space first.');
+      return;
+    }
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => CareDashboardScreen(spaceName: spaceName),
+      ),
+    );
+  }
+
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+      (route) => false,
+    );
+  }
+}
+
+class _BackSquareButton extends StatelessWidget {
+  const _BackSquareButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: IconButton(
+        tooltip: 'Back',
+        onPressed: onPressed,
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: const BorderSide(color: KupkopColors.border),
+          ),
+          elevation: 2,
+          shadowColor: KupkopColors.borderStrong,
+        ),
+        icon: const Icon(Icons.chevron_left_rounded, size: 28),
+      ),
+    );
+  }
+}
+
+class CareDashboardScreen extends StatelessWidget {
+  const CareDashboardScreen({super.key, required this.spaceName});
+
+  final String spaceName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    spaceName,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Colors.black,
+                      fontFamily: 'Baloo',
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Dashboard',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: KupkopColors.inkMuted,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const Spacer(),
+                  _PressableButton(
+                    label: 'Temporary Logout',
+                    backgroundColor: Colors.white,
+                    foregroundColor: KupkopColors.primary,
+                    borderColor: KupkopColors.borderStrong,
+                    shadowColor: KupkopColors.borderStrong,
+                    shadowOffset: 1,
+                    onPressed: () async {
+                      await FirebaseAuth.instance.signOut();
+                      if (!context.mounted) return;
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                        (route) => false,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1106,80 +1334,6 @@ class _SignInField extends StatelessWidget {
   }
 }
 
-class _PhoneNumberField extends StatelessWidget {
-  const _PhoneNumberField({this.controller});
-
-  final TextEditingController? controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: KupkopColors.fieldFill,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: KupkopColors.borderStrong),
-        boxShadow: const [
-          BoxShadow(color: KupkopColors.inputShadow, offset: Offset(0, 3)),
-        ],
-      ),
-      child: Row(
-        children: [
-          ClipOval(
-            child: Image.asset(
-              'src/images/Philippines.png',
-              width: 22,
-              height: 22,
-              fit: BoxFit.cover,
-              semanticLabel: 'Philippines flag',
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'PH',
-            style: TextStyle(
-              color: KupkopColors.inkMuted,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(width: 4),
-          const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: KupkopColors.inkMuted,
-            size: 22,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType: TextInputType.phone,
-              cursorColor: KupkopColors.primary,
-              decoration: const InputDecoration(
-                hintText: '+63(942-421-4534)',
-                hintStyle: TextStyle(
-                  color: KupkopColors.inkMuted,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              style: const TextStyle(
-                color: KupkopColors.ink,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _SocialButton extends StatelessWidget {
   const _SocialButton({required this.label, required this.icon});
 
@@ -1221,6 +1375,20 @@ class _SocialButton extends StatelessWidget {
   }
 }
 
+class _SocialAuthButtons extends StatelessWidget {
+  const _SocialAuthButtons();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SocialButton(label: 'Sign in With Google', icon: _GoogleMark()),
+      ],
+    );
+  }
+}
+
 class _GoogleMark extends StatelessWidget {
   const _GoogleMark();
 
@@ -1233,6 +1401,24 @@ class _GoogleMark extends StatelessWidget {
         fontSize: 23,
         fontWeight: FontWeight.w900,
         letterSpacing: 0,
+      ),
+    );
+  }
+}
+
+class _TermsText extends StatelessWidget {
+  const _TermsText();
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'By signing in to KupKop, you agree to our Terms\nand Privacy Policy',
+      textAlign: TextAlign.center,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: KupkopColors.inkMuted,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        height: 1.35,
       ),
     );
   }
