@@ -1040,63 +1040,73 @@ class _CreateCareSpaceScreenState extends State<CreateCareSpaceScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final compact = constraints.maxHeight < 720;
+
             return Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 430),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 34),
+                  padding: const EdgeInsets.fromLTRB(34, 28, 34, 30),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 32),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: _BackSquareButton(
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ),
-                      const Spacer(flex: 7),
+                      const Spacer(flex: 5),
                       Text(
-                        'Who are you caring for?',
-                        style: Theme.of(context).textTheme.titleLarge
-                            ?.copyWith(
-                              color: Colors.black,
-                              fontFamily: 'Baloo',
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                            ),
+                        "What's the space called?",
+                        textAlign: TextAlign.left,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.black,
+                          fontFamily: 'Baloo',
+                          fontSize: 23,
+                          fontWeight: FontWeight.w900,
+                          height: 1.02,
+                        ),
                       ),
-                      const SizedBox(height: 14),
-                      const _InputLabel('Name your space'),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Give your family care space a name.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       _SignInField(
                         controller: _spaceNameController,
-                        hintText: "Papa's space",
+                        hintText: "Papa's Space",
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _createCareSpace(),
                       ),
-                      const SizedBox(height: 18),
+                      Spacer(flex: compact ? 6 : 10),
                       _PressableButton(
-                        label: 'Create Care Space',
+                        label: 'Continue',
                         backgroundColor: KupkopColors.primary,
                         foregroundColor: Colors.white,
                         shadowColor: KupkopColors.primaryShadow,
                         onPressed: _createCareSpace,
                       ),
-                      const Spacer(flex: 9),
+                      const SizedBox(height: 18),
                       TextButton(
                         onPressed: _signOut,
                         style: TextButton.styleFrom(
                           foregroundColor: KupkopColors.inkMuted,
                           textStyle: const TextStyle(
                             fontFamily: 'Baloo',
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0,
                           ),
                         ),
                         child: const Text('Temporary Logout'),
                       ),
-                      const SizedBox(height: 22),
                     ],
                   ),
                 ),
@@ -1118,7 +1128,7 @@ class _CreateCareSpaceScreenState extends State<CreateCareSpaceScreen> {
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => CareDashboardScreen(spaceName: spaceName),
+        builder: (_) => CareSpaceCelebrationScreen(spaceName: spaceName),
       ),
     );
   }
@@ -1130,6 +1140,811 @@ class _CreateCareSpaceScreenState extends State<CreateCareSpaceScreen> {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const WelcomeScreen()),
       (route) => false,
+    );
+  }
+}
+
+class CareSpaceCelebrationScreen extends StatelessWidget {
+  const CareSpaceCelebrationScreen({super.key, required this.spaceName});
+
+  final String spaceName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(34, 30, 34, 36),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Spacer(flex: 7),
+                  Image.asset(
+                    'src/images/celebration.png',
+                    height: 190,
+                    fit: BoxFit.contain,
+                    semanticLabel: 'Celebration',
+                  ),
+                  const SizedBox(height: 34),
+                  Text(
+                    "You just created $spaceName",
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.black,
+                      fontFamily: 'Baloo',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      height: 1.15,
+                    ),
+                  ),
+                  const Spacer(flex: 8),
+                  _PressableButton(
+                    label: 'Continue',
+                    backgroundColor: KupkopColors.primary,
+                    foregroundColor: Colors.white,
+                    shadowColor: KupkopColors.primaryShadow,
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              SafetySettingsScreen(spaceName: spaceName),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SafetySettingsScreen extends StatefulWidget {
+  const SafetySettingsScreen({super.key, required this.spaceName});
+
+  final String spaceName;
+
+  @override
+  State<SafetySettingsScreen> createState() => _SafetySettingsScreenState();
+}
+
+class _SafetySettingsScreenState extends State<SafetySettingsScreen> {
+  final List<String> _packDurations = const [
+    '7 Days',
+    '15 Days',
+    '21 Days',
+    '30 Days',
+    '45 Days',
+    '60 Days',
+  ];
+
+  String _selectedDuration = '7 Days';
+  String _dailyDoseCount = '1';
+  final _otherDurationController = TextEditingController();
+
+  @override
+  void dispose() {
+    _otherDurationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 430),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(34, 28, 34, 34),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          _BackSquareButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: _OnboardingProgress(value: 0.42),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: constraints.maxHeight < 720 ? 28 : 44),
+                      Text(
+                        'Safety Settings',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.black,
+                          fontFamily: 'Baloo',
+                          fontSize: 25,
+                          fontWeight: FontWeight.w900,
+                          height: 1.02,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'How many days is your pill pack?',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      GridView.builder(
+                        itemCount: _packDurations.length,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 1.12,
+                            ),
+                        itemBuilder: (context, index) {
+                          final duration = _packDurations[index];
+
+                          return _DurationChoiceTile(
+                            label: duration,
+                            selected: duration == _selectedDuration,
+                            onTap: () {
+                              setState(() => _selectedDuration = duration);
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      _SignInField(
+                        controller: _otherDurationController,
+                        hintText: 'Other',
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (value) {
+                          final trimmed = value.trim();
+                          if (trimmed.isEmpty) return;
+                          setState(() => _selectedDuration = '$trimmed Days');
+                        },
+                      ),
+                      const SizedBox(height: 26),
+                      Text(
+                        'How many times taken each day?',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Colors.black,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _DailyDoseDropdown(
+                        value: _dailyDoseCount,
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() => _dailyDoseCount = value);
+                        },
+                      ),
+                      const Spacer(),
+                      _PressableButton(
+                        label: 'Continue',
+                        backgroundColor: KupkopColors.primary,
+                        foregroundColor: Colors.white,
+                        shadowColor: KupkopColors.primaryShadow,
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => MedicationScheduleScreen(
+                                spaceName: widget.spaceName,
+                                packDuration: _selectedDuration,
+                                dailyDoseCount: _dailyDoseCount,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class MedicationScheduleScreen extends StatefulWidget {
+  const MedicationScheduleScreen({
+    super.key,
+    required this.spaceName,
+    required this.packDuration,
+    required this.dailyDoseCount,
+  });
+
+  final String spaceName;
+  final String packDuration;
+  final String dailyDoseCount;
+
+  @override
+  State<MedicationScheduleScreen> createState() =>
+      _MedicationScheduleScreenState();
+}
+
+class _MedicationScheduleScreenState extends State<MedicationScheduleScreen> {
+  final List<String> _weekDays = const [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
+
+  final Set<String> _selectedDays = {'Sunday'};
+  String _firstDoseTime = '10:00 AM';
+  String _secondDoseTime = '12:00 PM';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 430),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(34, 28, 34, 34),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          _BackSquareButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: _OnboardingProgress(value: 0.62),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: constraints.maxHeight < 720 ? 28 : 44),
+                      Text(
+                        'Medication Schedule',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.black,
+                          fontFamily: 'Baloo',
+                          fontSize: 25,
+                          fontWeight: FontWeight.w900,
+                          height: 1.02,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'When do you need medication?',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      GridView.builder(
+                        itemCount: _weekDays.length,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 1.12,
+                            ),
+                        itemBuilder: (context, index) {
+                          final day = _weekDays[index];
+
+                          return _DurationChoiceTile(
+                            label: day,
+                            selected: _selectedDays.contains(day),
+                            onTap: () {
+                              setState(() {
+                                if (_selectedDays.contains(day)) {
+                                  _selectedDays.remove(day);
+                                } else {
+                                  _selectedDays.add(day);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 26),
+                      Text(
+                        'Select Time of Dosage',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Colors.black,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _TimeDropdown(
+                        value: _firstDoseTime,
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() => _firstDoseTime = value);
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _TimeDropdown(
+                        value: _secondDoseTime,
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() => _secondDoseTime = value);
+                        },
+                      ),
+                      const Spacer(),
+                      _PressableButton(
+                        label: 'Continue',
+                        backgroundColor: KupkopColors.primary,
+                        foregroundColor: Colors.white,
+                        shadowColor: KupkopColors.primaryShadow,
+                        onPressed: () {
+                          if (_selectedDays.isEmpty) {
+                            _showAuthMessage(
+                              context,
+                              'Choose at least one medication day.',
+                            );
+                            return;
+                          }
+
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ReviewMedicineScreen(
+                                spaceName: widget.spaceName,
+                                medicineName: 'Metformin',
+                                packDuration: widget.packDuration,
+                                dailyDoseCount: widget.dailyDoseCount,
+                                selectedDays: _weekDays
+                                    .where(_selectedDays.contains)
+                                    .toList(),
+                                doseTimes: [_firstDoseTime, _secondDoseTime],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class ReviewMedicineScreen extends StatelessWidget {
+  const ReviewMedicineScreen({
+    super.key,
+    required this.spaceName,
+    required this.medicineName,
+    required this.packDuration,
+    required this.dailyDoseCount,
+    required this.selectedDays,
+    required this.doseTimes,
+  });
+
+  final String spaceName;
+  final String medicineName;
+  final String packDuration;
+  final String dailyDoseCount;
+  final List<String> selectedDays;
+  final List<String> doseTimes;
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).height < 720;
+
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(34, 28, 34, 34),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      _BackSquareButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(child: _OnboardingProgress(value: 0.82)),
+                    ],
+                  ),
+                  SizedBox(height: compact ? 28 : 42),
+                  Text(
+                    'Review Your Medicine',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.black,
+                      fontFamily: 'Baloo',
+                      fontSize: 25,
+                      fontWeight: FontWeight.w900,
+                      height: 1.02,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      child: Column(
+                        children: [
+                          _ReviewSummaryField(
+                            label: 'Name of the medicine',
+                            value: medicineName,
+                            onEdit: () => Navigator.of(context).pop(),
+                          ),
+                          _ReviewSummaryField(
+                            label: 'How long will it last?',
+                            value: packDuration,
+                            onEdit: () => Navigator.of(context).pop(),
+                          ),
+                          _ReviewSummaryField(
+                            label: 'How many times taken each day?',
+                            value: dailyDoseCount,
+                            onEdit: () => Navigator.of(context).pop(),
+                          ),
+                          _ReviewSummaryField(
+                            label: 'Days taken medicine',
+                            value: _formatSelectedDays(selectedDays),
+                            onEdit: () => Navigator.of(context).pop(),
+                          ),
+                          _ReviewSummaryField(
+                            label: 'Select time of dosage',
+                            value: doseTimes.join(' - '),
+                            onEdit: () => Navigator.of(context).pop(),
+                            bottomSpacing: 0,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _PressableButton(
+                    label: 'Continue',
+                    backgroundColor: KupkopColors.primary,
+                    foregroundColor: Colors.white,
+                    shadowColor: KupkopColors.primaryShadow,
+                    onPressed: () {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              CareDashboardScreen(spaceName: spaceName),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatSelectedDays(List<String> days) {
+    if (days.isEmpty) return 'No days selected';
+    final abbreviations = days.map((day) => day.substring(0, 3)).toList();
+    return abbreviations.join(', ');
+  }
+}
+
+class _ReviewSummaryField extends StatelessWidget {
+  const _ReviewSummaryField({
+    required this.label,
+    required this.value,
+    required this.onEdit,
+    this.bottomSpacing = 18,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback onEdit;
+  final double bottomSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomSpacing),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: Colors.black,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onEdit,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 54),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: KupkopColors.fieldFill,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: KupkopColors.borderStrong),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: KupkopColors.inputShadow,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        value,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Icon(
+                      Icons.edit_outlined,
+                      color: KupkopColors.inkMuted,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OnboardingProgress extends StatelessWidget {
+  const _OnboardingProgress({required this.value});
+
+  final double value;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: LinearProgressIndicator(
+        value: value,
+        minHeight: 10,
+        backgroundColor: KupkopColors.surfaceLight,
+        valueColor: const AlwaysStoppedAnimation<Color>(KupkopColors.primary),
+      ),
+    );
+  }
+}
+
+class _DurationChoiceTile extends StatelessWidget {
+  const _DurationChoiceTile({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? KupkopColors.primary : KupkopColors.border,
+              width: selected ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: selected
+                    ? KupkopColors.primary.withValues(alpha: 0.16)
+                    : KupkopColors.socialShadow,
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
+              const Spacer(),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Icon(
+                  selected
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  color: selected
+                      ? KupkopColors.primary
+                      : KupkopColors.borderStrong,
+                  size: 18,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DailyDoseDropdown extends StatelessWidget {
+  const _DailyDoseDropdown({required this.value, required this.onChanged});
+
+  final String value;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 54,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: KupkopColors.fieldFill,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: KupkopColors.borderStrong),
+        boxShadow: const [
+          BoxShadow(color: KupkopColors.inputShadow, offset: Offset(0, 3)),
+        ],
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Colors.black,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          dropdownColor: Colors.white,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
+          items: const [
+            DropdownMenuItem(value: '1', child: Text('1')),
+            DropdownMenuItem(value: '2', child: Text('2')),
+            DropdownMenuItem(value: '3', child: Text('3')),
+            DropdownMenuItem(value: '4', child: Text('4')),
+          ],
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+}
+
+class _TimeDropdown extends StatelessWidget {
+  const _TimeDropdown({required this.value, required this.onChanged});
+
+  final String value;
+  final ValueChanged<String?> onChanged;
+
+  static const List<String> _times = [
+    '6:00 AM',
+    '7:00 AM',
+    '8:00 AM',
+    '9:00 AM',
+    '10:00 AM',
+    '11:00 AM',
+    '12:00 PM',
+    '1:00 PM',
+    '2:00 PM',
+    '3:00 PM',
+    '4:00 PM',
+    '5:00 PM',
+    '6:00 PM',
+    '7:00 PM',
+    '8:00 PM',
+    '9:00 PM',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 54,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: KupkopColors.fieldFill,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: KupkopColors.borderStrong),
+        boxShadow: const [
+          BoxShadow(color: KupkopColors.inputShadow, offset: Offset(0, 3)),
+        ],
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Colors.black,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          dropdownColor: Colors.white,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
+          items: _times
+              .map((time) => DropdownMenuItem(value: time, child: Text(time)))
+              .toList(),
+          onChanged: onChanged,
+        ),
+      ),
     );
   }
 }
@@ -1171,34 +1986,96 @@ class CareDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const _DashboardBottomNav(),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 430),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 28),
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    spaceName,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.black,
-                      fontFamily: 'Baloo',
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      height: 1,
+                  _DashboardHeader(spaceName: spaceName),
+                  const SizedBox(height: 18),
+                  const _AttentionCard(),
+                  const SizedBox(height: 20),
+                  _DashboardPanel(
+                    title: 'Medicines',
+                    icon: Icons.medication_rounded,
+                    actionLabel: 'View All',
+                    onActionPressed: () {},
+                    child: const Column(
+                      children: [
+                        _MedicineOverviewRow(
+                          name: 'Losartan',
+                          daysLeft: '12 days left',
+                        ),
+                        _MedicineOverviewRow(
+                          name: 'Metformin',
+                          daysLeft: '2 days left',
+                          needsAttention: true,
+                        ),
+                        _MedicineOverviewRow(
+                          name: 'Aspirin',
+                          daysLeft: '20 days left',
+                          bottomSpacing: 0,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Dashboard',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: KupkopColors.inkMuted,
-                      fontWeight: FontWeight.w800,
+                  const SizedBox(height: 14),
+                  _DashboardPanel(
+                    title: 'Tasks',
+                    icon: Icons.task_alt_rounded,
+                    actionLabel: 'View All',
+                    onActionPressed: () {},
+                    child: const Column(
+                      children: [
+                        _TaskOverviewRow(
+                          task: 'Buy Metformin',
+                          assignee: 'Kuya',
+                        ),
+                        _TaskOverviewRow(
+                          task: 'Check Pharmacy',
+                          assignee: 'Mom',
+                          bottomSpacing: 0,
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 14),
+                  _DashboardPanel(
+                    title: 'Recent Updates',
+                    icon: Icons.chat_bubble_rounded,
+                    actionLabel: 'Open Chat',
+                    onActionPressed: () {},
+                    child: const Column(
+                      children: [
+                        _ChatPreviewRow(
+                          sender: 'Mom',
+                          message: 'Paubos na Metformin.',
+                        ),
+                        _ChatPreviewRow(
+                          sender: 'Kuya',
+                          message: 'Ako bibili mamaya.',
+                          bottomSpacing: 0,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const _FamilyPanel(),
+                  const SizedBox(height: 24),
+                  _PressableButton(
+                    label: 'Add Medicine',
+                    backgroundColor: KupkopColors.primary,
+                    foregroundColor: Colors.white,
+                    shadowColor: KupkopColors.primaryShadow,
+                    onPressed: () {},
+                  ),
+                  const SizedBox(height: 12),
                   _PressableButton(
                     label: 'Temporary Logout',
                     backgroundColor: Colors.white,
@@ -1210,7 +2087,9 @@ class CareDashboardScreen extends StatelessWidget {
                       await FirebaseAuth.instance.signOut();
                       if (!context.mounted) return;
                       Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const WelcomeScreen(),
+                        ),
                         (route) => false,
                       );
                     },
@@ -1218,6 +2097,589 @@ class CareDashboardScreen extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader({required this.spaceName});
+
+  final String spaceName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: KupkopColors.border),
+        boxShadow: const [
+          BoxShadow(color: KupkopColors.socialShadow, offset: Offset(0, 5)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: KupkopColors.surfaceLight,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: KupkopColors.border),
+            ),
+            child: const Icon(
+              Icons.elderly_rounded,
+              color: Colors.black,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  spaceName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: Colors.black,
+                    fontFamily: 'Baloo',
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Container(
+                      width: 9,
+                      height: 9,
+                      decoration: const BoxDecoration(
+                        color: KupkopColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    Text(
+                      'Everything okay',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: KupkopColors.inkMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.notifications_none_rounded,
+            color: KupkopColors.inkMuted,
+            size: 24,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttentionCard extends StatelessWidget {
+  const _AttentionCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBF0),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFFFD76A), width: 1.5),
+        boxShadow: const [
+          BoxShadow(color: Color(0xFFFFE8A8), offset: Offset(0, 5)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: KupkopColors.yellow,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Attention Needed',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontFamily: 'Baloo',
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'Metformin',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '2 days remaining',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: KupkopColors.inkMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFFE2A6)),
+            ),
+            child: const Text(
+              'Task: Buy Metformin',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _PressableButton(
+            label: 'View Medicine',
+            backgroundColor: KupkopColors.primary,
+            foregroundColor: Colors.white,
+            shadowColor: KupkopColors.primaryShadow,
+            onPressed: () {},
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashboardPanel extends StatelessWidget {
+  const _DashboardPanel({
+    required this.title,
+    required this.icon,
+    required this.child,
+    this.actionLabel,
+    this.onActionPressed,
+  });
+
+  final String title;
+  final IconData icon;
+  final Widget child;
+  final String? actionLabel;
+  final VoidCallback? onActionPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: KupkopColors.border),
+        boxShadow: const [
+          BoxShadow(color: KupkopColors.socialShadow, offset: Offset(0, 5)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: KupkopColors.primary, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.black,
+                    fontFamily: 'Baloo',
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                ),
+              ),
+              if (actionLabel != null)
+                TextButton(
+                  onPressed: onActionPressed,
+                  style: TextButton.styleFrom(
+                    foregroundColor: KupkopColors.primary,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                  child: Text(actionLabel!),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _MedicineOverviewRow extends StatelessWidget {
+  const _MedicineOverviewRow({
+    required this.name,
+    required this.daysLeft,
+    this.needsAttention = false,
+    this.bottomSpacing = 12,
+  });
+
+  final String name;
+  final String daysLeft;
+  final bool needsAttention;
+  final double bottomSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomSpacing),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              name,
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+          Text(
+            daysLeft,
+            style: TextStyle(
+              color: needsAttention ? KupkopColors.red : KupkopColors.inkMuted,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0,
+            ),
+          ),
+          if (needsAttention) ...[
+            const SizedBox(width: 6),
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: KupkopColors.red,
+              size: 17,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskOverviewRow extends StatelessWidget {
+  const _TaskOverviewRow({
+    required this.task,
+    required this.assignee,
+    this.bottomSpacing = 12,
+  });
+
+  final String task;
+  final String assignee;
+  final double bottomSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomSpacing),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.radio_button_unchecked_rounded,
+            color: KupkopColors.primary,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  task,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Assigned: $assignee',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: KupkopColors.inkMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChatPreviewRow extends StatelessWidget {
+  const _ChatPreviewRow({
+    required this.sender,
+    required this.message,
+    this.bottomSpacing = 12,
+  });
+
+  final String sender;
+  final String message;
+  final double bottomSpacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomSpacing),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: KupkopColors.surfaceLight,
+              borderRadius: BorderRadius.circular(11),
+              border: Border.all(color: KupkopColors.border),
+            ),
+            child: Text(
+              sender.characters.first,
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  height: 1.25,
+                  letterSpacing: 0,
+                ),
+                children: [
+                  TextSpan(
+                    text: '$sender: ',
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  TextSpan(text: '"$message"'),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FamilyPanel extends StatelessWidget {
+  const _FamilyPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return _DashboardPanel(
+      title: 'Family',
+      icon: Icons.groups_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: const [
+              _FamilyChip(name: 'Mom'),
+              _FamilyChip(name: 'Kuya'),
+              _FamilyChip(name: 'Ate'),
+              _FamilyChip(name: 'Bunso'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '4 members',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: KupkopColors.inkMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FamilyChip extends StatelessWidget {
+  const _FamilyChip({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: KupkopColors.surfaceLight,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: KupkopColors.border),
+      ),
+      child: Text(
+        name,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0,
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardBottomNav extends StatelessWidget {
+  const _DashboardBottomNav();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 430),
+          child: Container(
+            height: 76,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: KupkopColors.border)),
+            ),
+            child: const Row(
+              children: [
+                _DashboardNavItem(
+                  label: 'Home',
+                  icon: Icons.home_rounded,
+                  selected: true,
+                ),
+                _DashboardNavItem(
+                  label: 'Medicines',
+                  icon: Icons.medication_rounded,
+                ),
+                _DashboardNavItem(
+                  label: 'Chat',
+                  icon: Icons.chat_bubble_rounded,
+                ),
+                _DashboardNavItem(label: 'Tasks', icon: Icons.task_alt_rounded),
+                _DashboardNavItem(label: 'Family', icon: Icons.groups_rounded),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardNavItem extends StatelessWidget {
+  const _DashboardNavItem({
+    required this.label,
+    required this.icon,
+    this.selected = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? KupkopColors.primary : KupkopColors.inkMuted;
+
+    return Expanded(
+      child: InkWell(
+        onTap: () {},
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 23),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1287,6 +2749,8 @@ class _SignInField extends StatelessWidget {
     this.keyboardType,
     this.obscureText = false,
     this.suffixIcon,
+    this.textInputAction,
+    this.onSubmitted,
   });
 
   final String hintText;
@@ -1294,6 +2758,8 @@ class _SignInField extends StatelessWidget {
   final TextInputType? keyboardType;
   final bool obscureText;
   final Widget? suffixIcon;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -1301,6 +2767,8 @@ class _SignInField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
       cursorColor: KupkopColors.primary,
       style: const TextStyle(
         color: KupkopColors.ink,
